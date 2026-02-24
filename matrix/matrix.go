@@ -3,16 +3,24 @@ package matrix
 import (
 	"context"
 	"log"
+	"strings"
 
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
 
+func normalizeHomeserverURL(homeserverURL string) string {
+	if !strings.Contains(homeserverURL, "://") {
+		return "https://" + homeserverURL
+	}
+	return homeserverURL
+}
+
 // NewMatrixWriteCloser logs in to the provided matrix server URL using the provided user ID and password
 // and returns a matrix WriteCloser
 func NewMatrixWriteCloser(ctx context.Context, userID, userPassword, homeserverURL string) (WriteCloser, error) {
-	client, err := mautrix.NewClient(homeserverURL, id.UserID(userID), "")
+	client, err := mautrix.NewClient(normalizeHomeserverURL(homeserverURL), id.UserID(userID), "")
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +42,7 @@ func NewMatrixWriteCloser(ctx context.Context, userID, userPassword, homeserverU
 // NewMatrixWriteCloserWithToken creates a new WriteCloser with the provided user ID and token
 func NewMatrixWriteCloserWithToken(userID, token, homeserverURL string) (WriteCloser, error) {
 	log.Print("using matrix auth token")
-	client, err := mautrix.NewClient(homeserverURL, id.UserID(userID), token)
+	client, err := mautrix.NewClient(normalizeHomeserverURL(homeserverURL), id.UserID(userID), token)
 	if err != nil {
 		return nil, err
 	}
