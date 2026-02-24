@@ -36,7 +36,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Build
-        run: go build -o grafana-matrix-forwarder ./...
+        run: go build -o grafana-matrix-forwarder .
 
   release:
     runs-on: ubuntu-latest
