@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 )
@@ -28,7 +27,7 @@ func (f *Forwarder) deleteMatrixEvent(alertID string) {
 }
 
 func (f *Forwarder) prePopulateAlertMap() {
-	fileData, err := ioutil.ReadFile(alertMapFileName)
+	fileData, err := os.ReadFile(alertMapFileName)
 	if err == nil {
 		err = json.Unmarshal(fileData, &f.alertToSentEventMap)
 	}
@@ -45,7 +44,7 @@ func (f *Forwarder) persistAlertMap() {
 
 	jsonData, err := json.Marshal(f.alertToSentEventMap)
 	if err == nil {
-		err = ioutil.WriteFile(alertMapFileName, jsonData, os.ModePerm)
+		err = os.WriteFile(alertMapFileName, jsonData, os.ModePerm)
 	}
 
 	if err != nil {

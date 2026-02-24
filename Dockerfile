@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.23
 
 # Create main app folder to run from
 WORKDIR /app

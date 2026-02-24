@@ -43,7 +43,7 @@ build:
 	-ldflags "\
 	-X main.version=${shell git describe --tags} \
 	-X main.commit=${shell git rev-parse HEAD} \
-	-X main.date=${shell date --iso-8601=seconds} \
+	-X main.date=${shell date -u +"%Y-%m-%dT%H:%M:%SZ"} \
 	-X main.builtBy=manual \
 	" \
 	-o grafana-matrix-forwarder \

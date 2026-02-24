@@ -36,7 +36,7 @@ func (server *Server) handleGrafanaAlertInner(handler RequestHandler, response h
 
 	server.metricsCollector.RecordAlerts(alerts)
 
-	err = server.alertForwarder.ForwardEvents(roomIDs, alerts)
+	err = server.alertForwarder.ForwardEvents(request.Context(), roomIDs, alerts)
 	if err != nil {
 		return err
 	}

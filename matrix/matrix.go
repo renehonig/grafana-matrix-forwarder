@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"context"
 	"log"
 
 	"maunium.net/go/mautrix"
@@ -10,14 +11,14 @@ import (
 
 // NewMatrixWriteCloser logs in to the provided matrix server URL using the provided user ID and password
 // and returns a matrix WriteCloser
-func NewMatrixWriteCloser(userID, userPassword, homeserverURL string) (WriteCloser, error) {
+func NewMatrixWriteCloser(ctx context.Context, userID, userPassword, homeserverURL string) (WriteCloser, error) {
 	client, err := mautrix.NewClient(homeserverURL, id.UserID(userID), "")
 	if err != nil {
 		return nil, err
 	}
 
 	log.Print("logging into matrix with username + password")
-	_, err = client.Login(&mautrix.ReqLogin{
+	_, err = client.Login(ctx, &mautrix.ReqLogin{
 		Type: "m.login.password",
 		Identifier: mautrix.UserIdentifier{
 			Type: "m.id.user",
@@ -30,7 +31,7 @@ func NewMatrixWriteCloser(userID, userPassword, homeserverURL string) (WriteClos
 	return buildMatrixWriteCloser(client, true), err
 }
 
-// NewMatrixWriteCloser creates a new WriteCloser with the provided user ID and token
+// NewMatrixWriteCloserWithToken creates a new WriteCloser with the provided user ID and token
 func NewMatrixWriteCloserWithToken(userID, token, homeserverURL string) (WriteCloser, error) {
 	log.Print("using matrix auth token")
 	client, err := mautrix.NewClient(homeserverURL, id.UserID(userID), token)
@@ -63,11 +64,11 @@ func (wc writeCloser) GetWriter() Writer {
 	return wc.writer
 }
 
-func (wc writeCloser) Close() error {
+func (wc writeCloser) Close(ctx context.Context) error {
 	if !wc.closeable {
 		return nil
 	}
-	_, err := wc.writer.matrixClient.Logout()
+	_, err := wc.writer.matrixClient.Logout(ctx)
 	return err
 }
 
@@ -80,32 +81,29 @@ func buildFormattedMessagePayload(body FormattedMessage) *event.MessageEventCont
 	}
 }
 
-func (w writer) Send(roomID string, body FormattedMessage) (string, error) {
+func (w writer) Send(ctx context.Context, roomID string, body FormattedMessage) (string, error) {
 	payload := buildFormattedMessagePayload(body)
-	resp, err := w.sendPayload(roomID, event.EventMessage, payload)
+	resp, err := w.sendPayload(ctx, roomID, event.EventMessage, payload)
 	if err != nil {
 		return "", err
 	}
 	return resp.EventID.String(), err
 }
 
-func (w writer) Reply(roomID string, eventID string, body FormattedMessage) (string, error) {
+func (w writer) Reply(ctx context.Context, roomID string, eventID string, body FormattedMessage) (string, error) {
 	payload := buildFormattedMessagePayload(body)
 	payload.RelatesTo = &event.RelatesTo{
 		EventID: id.EventID(eventID),
 		Type:    event.RelReference,
 	}
-	resp, err := w.sendPayload(roomID, event.EventMessage, &payload)
+	resp, err := w.sendPayload(ctx, roomID, event.EventMessage, &payload)
 	if err != nil {
 		return "", err
 	}
 	return resp.EventID.String(), err
 }
 
-func (w writer) React(roomID string, eventID string, reaction string) (string, error) {
-	// Temporary fix to support sending reactions. The key is to pass a pointer to the send method.
-	// PR that addresses issue and fix: https://github.com/tulir/mautrix-go/pull/21
-	// Fixed by: https://github.com/tulir/mautrix-go/commit/617e6c94cc3a2f046434bf262fadd993daf02141
+func (w writer) React(ctx context.Context, roomID string, eventID string, reaction string) (string, error) {
 	payload := event.ReactionEventContent{
 		RelatesTo: event.RelatesTo{
 			EventID: id.EventID(eventID),
@@ -113,13 +111,13 @@ func (w writer) React(roomID string, eventID string, reaction string) (string, e
 			Key:     reaction,
 		},
 	}
-	resp, err := w.sendPayload(roomID, event.EventReaction, &payload)
+	resp, err := w.sendPayload(ctx, roomID, event.EventReaction, &payload)
 	if err != nil {
 		return "", err
 	}
 	return resp.EventID.String(), err
 }
 
-func (w writer) sendPayload(roomID string, eventType event.Type, messagePayload interface{}) (*mautrix.RespSendEvent, error) {
-	return w.matrixClient.SendMessageEvent(id.RoomID(roomID), eventType, messagePayload)
+func (w writer) sendPayload(ctx context.Context, roomID string, eventType event.Type, messagePayload interface{}) (*mautrix.RespSendEvent, error) {
+	return w.matrixClient.SendMessageEvent(ctx, id.RoomID(roomID), eventType, messagePayload)
 }

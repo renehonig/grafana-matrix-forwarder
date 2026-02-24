@@ -89,7 +89,7 @@ func (server Server) Start() (err error) {
 		cancel()
 	}()
 
-	if err = server.matrixWriteCloser.Close(); err != nil {
+	if err = server.matrixWriteCloser.Close(ctxShutDown); err != nil {
 		log.Fatalf("matrix client logout failed: %+s", err)
 	}
 	if err = srv.Shutdown(ctxShutDown); err != nil {
